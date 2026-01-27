@@ -1,0 +1,12 @@
+data/
+ham10000_raw/
+backend/model.h5
+
+# Typical ML artifacts
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.npy
+*.npz
