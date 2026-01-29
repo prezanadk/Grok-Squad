@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dermal Lesion Intelligence</title>
+
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    [data-theme="dark"] {
+      --bg: #0f1419;
+      --card: #1a1f2e;
+      --border: #2a3142;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --shadow: rgba(0, 0, 0, 0.3);
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --shadow: rgba(0, 0, 0, 0.08);
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .pill {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 12px;
+      border: 1px solid var(--border);
+    }
+    .pill.low { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .pill.medium { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+    .pill.high { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .pill.uncertain { background: rgba(107, 114, 128, 0.15); color: var(--muted); }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 6px var(--shadow);
+      transition: all 0.3s ease;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 16px var(--shadow);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(59, 130, 246, 0.05);
+    }
+    .btn-primary:disabled, .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    input[type="file"]:hover {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.03);
+    }
+
+    textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      padding: 12px;
+      background: transparent;
+      color: var(--text);
+      resize: vertical;
+      min-height: 100px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    img {
+      width: 100%;
+      max-width: 360px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      display: block;
+      object-fit: cover;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    th {
+      background: rgba(59, 130, 246, 0.08);
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    code {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+    }
+    .text-muted { color: var(--muted); }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ---------- Modal ---------- */
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0,0,0,0.55);
+      z-index: 50;
+    }
+    .modal-backdrop.show{ display:flex; }
+    .modal{
+      width: 100%;
+      max-width: 560px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      padding: 20px;
+    }
+    .modal h3{ font-size: 18px; font-weight: 800; margin: 0 0 8px; }
+    .modal p{ margin: 0; color: var(--muted); line-height: 1.5; }
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+
+<body class="transition-colors duration-300">
+  <div class="min-h-screen" style="background: var(--bg);">
+    <!-- Header -->
+    <header class="border-b" style="border-color: var(--border);">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 id="ui_title" class="text-3xl sm:text-4xl font-bold tracking-tight">
+              Dermal Lesion Intelligence
+            </h1>
+            <p id="ui_subtitle" class="mt-2 text-sm text-muted max-w-2xl leading-relaxed">
+              Upload a photo, get a predicted lesion type + benign/malignant estimate.
+              <br /><strong>Not medical advice.</strong> If you're worried, see a dermatologist.
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-secondary px-3" onclick="toggleTheme()" title="Toggle theme">
+              <span id="theme-icon">🌙</span>
+            </button>
+            <button class="btn-secondary px-3" onclick="toggleLang()" title="Toggle language">
+              <span id="lang-btn">EN / NP</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <!-- Upload -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="lg:col-span-2 card">
+          <div class="space-y-6">
+            <div>
+              <label id="ui_upload_label" class="block text-sm font-semibold mb-3">Upload Image</label>
+              <input id="file" type="file" accept="image/*" />
+              <p class="text-xs text-muted mt-2">📷 JPG, PNG, or WebP • Max 10MB</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2">
+              <!-- IMPORTANT: now opens modal first -->
+              <button id="btn" class="btn-primary flex-1" onclick="onAnalyzeClick('/analyze')">
+                <span id="btn-text">Analyze</span>
+              </button>
+            </div>
+
+            <div class="bg-opacity-50 rounded-lg p-4" style="background: rgba(59, 130, 246, 0.05);">
+              <p class="text-xs text-muted mb-1"><span id="ui_backend_label">Backend URL</span>:</p>
+              <code id="apiUrl" class="text-sm">http://127.0.0.1:8000</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="card flex items-center justify-center min-h-64">
+          <img id="preview" alt="preview" style="display:none;" />
+          <div id="preview-placeholder" class="text-center text-muted">
+            <p class="text-4xl mb-2">📸</p>
+            <p id="preview-text" class="text-sm">Image preview will appear here</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="out" style="display:none;">
+        <div class="card mb-6">
+          <h2 id="ui_result_title" class="text-2xl font-bold mb-6 gradient-text">Result</h2>
+          <div id="summary" class="space-y-4"></div>
+        </div>
+
+        <!-- Chat -->
+        <div class="card mb-6">
+          <h3 id="ui_chat_title" class="text-xl font-bold mb-4 flex items-center gap-2">
+            <span>💬</span> Ask about symptoms
+          </h3>
+
+          <textarea id="symptoms" class="mb-4" placeholder="Describe symptoms (itching, bleeding, pain...)"></textarea>
+
+          <button class="btn-primary mb-4" onclick="askAI()">
+            <span id="ui_chat_btn">Ask</span>
+          </button>
+
+          <div id="aiReply" class="text-muted text-sm leading-relaxed p-4 rounded-lg"
+               style="display:none; background: rgba(59, 130, 246, 0.05);"></div>
+
+          <p class="text-xs text-muted mt-4" id="ui_chat_note">
+            ⚠️ This chat is educational only. It cannot diagnose. If symptoms worsen or you're unsure, see a professional.
+          </p>
+        </div>
+
+        <!-- Legend -->
+        <div class="card">
+          <h3 id="ui_legend_title" class="text-lg font-bold mb-4">📚 Legend (codes explained)</h3>
+          <div id="legend"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="border-t mt-12" style="border-color: var(--border);">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <p class="text-xs text-muted text-center">
+          Built for awareness. Always consult a professional.
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== DISCLAIMER MODAL ==================== -->
+  <div id="disclaimerBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="disclaimerTitle">
+    <div class="modal">
+      <h3 id="disclaimerTitle">⚠️ Disclaimer</h3>
+      <p id="disclaimerText">
+        The information provided by this tool is <strong>not for professional medical use</strong>.
+        The result is only an <strong>estimation</strong> and may be wrong. For any concerns, consult a dermatologist.
+      </p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeDisclaimer(false)" id="disclaimerCancel">Cancel</button>
+        <button class="btn-primary" onclick="closeDisclaimer(true)" id="disclaimerContinue">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== CONFIG ====================
+    const API_BASE = "http://127.0.0.1:8000";
+    document.getElementById("apiUrl").textContent = API_BASE;
+
+    // ==================== CLASS INFO ====================
+    const CLASS_INFO = {
+      akiec: { name: "Actinic keratoses / Bowen's disease", malignant: true },
+      bcc:   { name: "Basal cell carcinoma", malignant: true },
+      bkl:   { name: "Benign keratosis-like lesions", malignant: false },
+      df:    { name: "Dermatofibroma", malignant: false },
+      mel:   { name: "Melanoma", malignant: true },
+      nv:    { name: "Melanocytic nevi (moles)", malignant: false },
+      vasc:  { name: "Vascular lesions", malignant: false },
+    };
+
+    let lastTopClass = null;
+
+    // ==================== THEME ====================
+    function toggleTheme() {
+      const t = document.documentElement;
+      const isDark = t.dataset.theme === "dark";
+      t.dataset.theme = isDark ? "light" : "dark";
+      document.getElementById("theme-icon").textContent = isDark ? "☀️" : "🌙";
+      localStorage.setItem("theme", isDark ? "light" : "dark");
+    }
+
+    // ==================== LANGUAGE ====================
+    const LANG = {
+      en: {
+        title: "Dermal Lesion Intelligence",
+        subtitle: "Upload a photo, get a predicted lesion type + benign/malignant estimate.<br/><strong>Not medical advice.</strong> If you're worried, see a dermatologist.",
+        upload: "Upload Image",
+        backend: "Backend URL",
+        result: "Result",
+        chatTitle: "Ask about symptoms",
+        chatBtn: "Ask",
+        chatPh: "Describe symptoms (itching, bleeding, pain...)",
+        chatNote: "⚠️ This chat is educational only. It cannot diagnose. If symptoms worsen or you're unsure, see a professional.",
+        legend: "Legend (codes explained)",
+        decision: "Decision",
+        topType: "Top Type",
+        category: "Category",
+        device: "Device",
+        cancer: "Cancerous (malignant)",
+        benign: "Non-cancerous (benign)",
+        uncertain: "Uncertain",
+        lowCert: "Low certainty",
+        retake: "Try a clearer photo (bright light, close, in-focus).",
+        eduPrefix: "⚠️ Educational only, not a diagnosis.",
+        // modal
+        discTitle: "⚠️ Disclaimer",
+        discText: "The information provided by this tool is not for professional medical use. The result is only an estimation and may be wrong. For any concerns, consult a dermatologist.",
+        discCancel: "Cancel",
+        discContinue: "Continue",
+      },
+      np: {
+        title: "छाला दाग/घाउ जाँच",
+        subtitle: "तस्वीर अपलोड गर्नुहोस् र घाउको प्रकार तथा जोखिम (benign/malignant) को अनुमान पाउनुहोस्।<br/><strong>यो चिकित्सकीय सल्लाह होइन।</strong> चिन्ता लागेमा चिकित्सक/छाला रोग विशेषज्ञलाई देखाउनुहोस्।",
+        upload: "तस्वीर अपलोड गर्नुहोस्",
+        backend: "ब्याकएन्ड URL",
+        result: "नतिजा",
+        chatTitle: "लक्षणबारे सोध्नुहोस्",
+        chatBtn: "सोध्नुहोस्",
+        chatPh: "लक्षण लेख्नुहोस् (खुजली, रगत आउनु, दुखाइ...)",
+        chatNote: "⚠️ यो च्याट केवल जानकारीका लागि हो। यसले रोगको निश्चित निदान गर्दैन। लक्षण बढेमा चिकित्सकलाई देखाउनुहोस्।",
+        legend: "कोडको अर्थ",
+        decision: "नतिजा",
+        topType: "मुख्य प्रकार",
+        category: "श्रेणी",
+        device: "डिभाइस",
+        cancer: "क्यान्सर हुनसक्ने (malignant)",
+        benign: "क्यान्सर होइन (benign)",
+        uncertain: "अनिश्चित",
+        lowCert: "विश्वास कम",
+        retake: "फोटो अझ स्पष्ट खिच्नुहोस् (राम्रो उज्यालो, नजिक, फोकस)।",
+        eduPrefix: "⚠️ यो जानकारीका लागि मात्र हो, निदान होइन।",
+        // modal
+        discTitle: "⚠️ सूचना",
+        discText: "यो उपकरणबाट आउने जानकारी चिकित्सकीय/व्यावसायिक प्रयोगका लागि होइन। नतिजा केवल अनुमान हो र गलत हुन सक्छ। कुनै शंका भएमा छाला रोग विशेषज्ञलाई देखाउनुहोस्।",
+        discCancel: "रद्द",
+        discContinue: "अगाडि बढ्नुहोस्",
+      }
+    };
+
+    let currentLang = "en";
+
+    function applyLang() {
+      const L = LANG[currentLang];
+      document.getElementById("ui_title").innerText = L.title;
+      document.getElementById("ui_subtitle").innerHTML = L.subtitle;
+      document.getElementById("ui_upload_label").innerText = L.upload;
+      document.getElementById("ui_backend_label").innerText = L.backend;
+      document.getElementById("ui_result_title").innerText = L.result;
+      document.getElementById("ui_chat_title").innerText = L.chatTitle;
+      document.getElementById("ui_chat_btn").innerText = L.chatBtn;
+      document.getElementById("symptoms").placeholder = L.chatPh;
+      document.getElementById("ui_chat_note").innerText = L.chatNote;
+      document.getElementById("ui_legend_title").innerText = L.legend;
+      document.getElementById("lang-btn").innerText = currentLang === "en" ? "EN / NP" : "NP / EN";
+
+      // modal language
+      document.getElementById("disclaimerTitle").innerText = L.discTitle;
+      document.getElementById("disclaimerText").innerText = L.discText;
+      document.getElementById("disclaimerCancel").innerText = L.discCancel;
+      document.getElementById("disclaimerContinue").innerText = L.discContinue;
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === "en" ? "np" : "en";
+      applyLang();
+      localStorage.setItem("language", currentLang);
+    }
+
+    // ==================== UTILITIES ====================
+    function dampenConfidence(conf) {
+      return conf > 0.85 ? Math.max(0, conf - 0.10) : conf;
+    }
+
+    function uncertaintyLabel(probMap) {
+      const entries = Object.entries(probMap || {}).sort((a,b)=>b[1]-a[1]);
+      if (entries.length < 2) return { uncertain: true, reason: "Not enough class info" };
+
+      const top = entries[0][1];
+      const second = entries[1][1];
+      const gap = top - second;
+
+      if (top < 0.50) return { uncertain: true, reason: "Low confidence" };
+      if (gap < 0.15) return { uncertain: true, reason: "Close predictions" };
+
+      return { uncertain: false, reason: "" };
+    }
+
+    function pillClass(risk, uncertain=false) {
+      if (uncertain) return "pill uncertain";
+      if (risk === "high") return "pill high";
+      if (risk === "medium") return "pill medium";
+      return "pill low";
+    }
+
+    function pickTopFromProbabilities(probabilities) {
+      const entries = Object.entries(probabilities || {});
+      if (!entries.length) return { topKey: "unknown", topVal: 0 };
+      entries.sort((a,b) => b[1] - a[1]);
+      return { topKey: entries[0][0], topVal: entries[0][1] };
+    }
+
+    function renderLegend() {
+      const L = LANG[currentLang];
+      const legend = document.getElementById("legend");
+      legend.innerHTML = `
+        <div class="overflow-x-auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Meaning</th>
+                <th>${L.category}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.entries(CLASS_INFO).map(([k,v]) => `
+                <tr>
+                  <td><code>${k}</code></td>
+                  <td class="text-muted">${v.name}</td>
+                  <td>${v.malignant ? L.cancer : L.benign}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderResult(data) {
+      const out = document.getElementById("out");
+      const summary = document.getElementById("summary");
+      out.style.display = "block";
+      renderLegend();
+
+      const L = LANG[currentLang];
+      const { topKey, topVal } = pickTopFromProbabilities(data.probabilities);
+      lastTopClass = topKey;
+
+      const info = CLASS_INFO[topKey] || { name: topKey, malignant: null };
+      const u = uncertaintyLabel(data.probabilities);
+
+      let decision = data.decision || "—";
+      let risk = data.risk_level || "—";
+
+      if (u.uncertain) {
+        decision = L.uncertain.toUpperCase();
+        risk = "low";
+      }
+
+      let category =
+        info.malignant === true ? L.cancer :
+        info.malignant === false ? L.benign :
+        "Unknown";
+
+      if (u.uncertain) category = L.uncertain;
+
+      summary.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-opacity-50 rounded-lg p-4" style="background: rgba(59, 130, 246, 0.05);">
+            <p class="text-xs text-muted uppercase tracking-wider mb-1">${L.decision}</p>
+            <div class="flex items-center gap-3">
+              <span class="text-2xl font-bold">${String(decision).toUpperCase()}</span>
+              <span class="${pillClass(risk, u.uncertain)}">${u.uncertain ? L.uncertain : String(risk).toUpperCase()}</span>
+            </div>
+          </div>
+
+          <div class="bg-opacity-50 rounded-lg p-4" style="background: rgba(59, 130, 246, 0.05);">
+            <p class="text-xs text-muted uppercase tracking-wider mb-1">${L.topType}</p>
+            <p class="font-bold"><code>${topKey}</code> — <span class="text-sm">${info.name}</span></p>
+            <p class="text-sm mt-1">${(dampenConfidence(topVal) * 100).toFixed(1)}% confidence</p>
+          </div>
+        </div>
+
+        <div class="bg-opacity-50 rounded-lg p-4" style="background: rgba(59, 130, 246, 0.05);">
+          <p class="text-xs text-muted uppercase tracking-wider mb-2">${L.category}</p>
+          <p class="font-semibold">${category}</p>
+          <p class="text-xs text-muted mt-2">📱 ${L.device}: ${data.device || "?"}</p>
+        </div>
+
+        ${u.uncertain ? `
+          <div class="bg-opacity-50 rounded-lg p-4 border-l-4" style="background: rgba(239, 68, 68, 0.05); border-color: #ef4444;">
+            <p class="text-sm text-red-400"><strong>⚠️ ${L.lowCert}:</strong> ${u.reason}</p>
+            <p class="text-sm text-red-400 mt-2">${L.retake}</p>
+          </div>
+        ` : ""}
+      `;
+
+      out.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // ==================== IMAGE INPUT ====================
+    const fileInput = document.getElementById("file");
+    const preview = document.getElementById("preview");
+    const previewPlaceholder = document.getElementById("preview-placeholder");
+    const aiReply = document.getElementById("aiReply");
+
+    fileInput.addEventListener("change", () => {
+      const f = fileInput.files?.[0];
+      if (!f) return;
+      preview.src = URL.createObjectURL(f);
+      preview.style.display = "block";
+      previewPlaceholder.style.display = "none";
+      document.getElementById("out").style.display = "none";
+      aiReply.style.display = "none";
+      aiReply.textContent = "";
+    });
+
+    // ==================== DISCLAIMER FLOW ====================
+    let pendingEndpoint = null;
+
+    function openDisclaimer(endpoint) {
+      pendingEndpoint = endpoint;
+      document.getElementById("disclaimerBackdrop").classList.add("show");
+      // close on ESC
+      document.addEventListener("keydown", escCloseOnce);
+    }
+
+    function escCloseOnce(e) {
+      if (e.key === "Escape") closeDisclaimer(false);
+    }
+
+    function closeDisclaimer(continueRun) {
+      document.getElementById("disclaimerBackdrop").classList.remove("show");
+      document.removeEventListener("keydown", escCloseOnce);
+
+      if (continueRun && pendingEndpoint) {
+        call(pendingEndpoint); // run only after continue
+      }
+      pendingEndpoint = null;
+    }
+
+    // Clicking analyze triggers modal first
+    function onAnalyzeClick(endpoint) {
+      const f = fileInput.files?.[0];
+      if (!f) {
+        alert(currentLang === "en" ? "Choose an image first." : "पहिले तस्वीर छान्नुहोस्।");
+        return;
+      }
+      openDisclaimer(endpoint);
+    }
+
+    // Also close if user clicks outside the modal box
+    document.getElementById("disclaimerBackdrop").addEventListener("click", (e) => {
+      if (e.target.id === "disclaimerBackdrop") closeDisclaimer(false);
+    });
+
+    // ==================== CALL BACKEND ====================
+    async function call(endpoint) {
+      const f = fileInput.files?.[0];
+      if (!f) {
+        alert(currentLang === "en" ? "Choose an image first." : "पहिले तस्वीर छान्नुहोस्।");
+        return;
+      }
+
+      const btn = document.getElementById("btn");
+      btn.disabled = true;
+
+      try {
+        const fd = new FormData();
+        fd.append("file", f);
+
+        const res = await fetch(`${API_BASE}${endpoint}`, { method: "POST", body: fd });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          alert(data.detail || data.error || "Request failed");
+          return;
+        }
+
+        renderResult(data);
+      } catch (e) {
+        alert(currentLang === "en"
+          ? "Could not reach backend. Is it running on port 8000?"
+          : "ब्याकएन्डमा जडान गर्न सकिएन। के यो port 8000 मा चल्दैछ?");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ==================== AI CHAT ====================
+    async function askAI() {
+      const symptomsText = document.getElementById("symptoms").value.trim();
+      if (!symptomsText) {
+        alert(currentLang === "en" 
+          ? "Please describe your symptoms first." 
+          : "कृपया पहिले लक्षण लेख्नुहोस्।");
+        return;
+      }
+
+      if (!lastTopClass) {
+        alert(currentLang === "en"
+          ? "Please analyze an image first."
+          : "कृपया पहिले तस्वीर विश्लेषण गर्नुहोस्।");
+        return;
+      }
+
+      const replyDiv = document.getElementById("aiReply");
+      replyDiv.style.display = "block";
+      replyDiv.textContent = currentLang === "en" ? "Thinking..." : "सोच्दै...";
+
+      try {
+        const res = await fetch(`${API_BASE}/ai_explain`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lesion_type: lastTopClass,
+            symptoms: symptomsText
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          replyDiv.textContent = data.detail || data.error || "Request failed";
+          replyDiv.style.color = "var(--muted)";
+          return;
+        }
+
+        replyDiv.textContent = data.reply || "No reply received";
+        replyDiv.style.color = "var(--text)";
+      } catch (e) {
+        replyDiv.textContent = currentLang === "en"
+          ? "Could not reach backend. Is it running on port 8000?"
+          : "ब्याकएन्डमा जडान गर्न सकिएन। के यो port 8000 मा चल्दैछ?";
+        replyDiv.style.color = "var(--muted)";
+      }
+    }
+
+    // ==================== INIT ====================
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedTheme = localStorage.getItem("theme") || "dark";
+      document.documentElement.dataset.theme = savedTheme;
+      document.getElementById("theme-icon").textContent = savedTheme === "dark" ? "🌙" : "☀️";
+
+      currentLang = localStorage.getItem("language") || "en";
+      applyLang();
+    });
+
+    // Export globals for inline onclick
+    window.toggleTheme = toggleTheme;
+    window.toggleLang = toggleLang;
+    window.call = call;
+    window.askAI = askAI;
+    window.onAnalyzeClick = onAnalyzeClick;
+    window.closeDisclaimer = closeDisclaimer;
+  </script>
+</body>
+</html>

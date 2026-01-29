@@ -1,0 +1,8 @@
+Due to the file size limitations of Github, we were not able to upload the data we sorted in github. However the links of datasets we ussed are given below :
+https://drive.google.com/drive/folders/1twg0RQxRfW7gfhStMzKpCYQ4w1R4pjwD?usp=sharing
+
+The above drive link consists datasets of patients with similar scars/rashes which we had sorted into cancerous(malignant) and non cancerous (beign). We trained the model using these sorted datasets which made ourn model recongize the scars and tell if the scars uploaded by client is canceorous or not with 70-75%accuracy.
+
+Sources of data : 
+International Skin Imaging Collaborationn challenge 2019 :https://challenge.isic-archive.com/data/#2019
+North south university skin cancer detection dataset : https://universe.roboflow.com/north-south-university-9briv/skin-cancer-detection-wfldq
